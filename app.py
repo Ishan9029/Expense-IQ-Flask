@@ -182,7 +182,13 @@ def fetch_expenses(user_id):
 def normalize_expenses(rows):
     expenses = []
     for row in rows:
-        expense_date = datetime.strptime(row['expense_date'], '%Y-%m-%d').date()
+        raw_date = row['expense_date']
+
+        if isinstance(raw_date, str):
+            expense_date = datetime.strptime(raw_date, '%Y-%m-%d').date()
+        else:
+            expense_date = raw_date
+
         expenses.append({
             'id': row['id'],
             'date': expense_date,
