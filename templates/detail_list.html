@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} — {{ app_name }}{% endblock %}
+{% block content %}
+<section class="page-shell">
+    <div class="page-head"><div><div class="hero-badge">Details</div><h1 class="dashboard-title">{{ page_title }}</h1><p class="dashboard-subtitle">{{ page_subtitle }}</p></div><a href="{{ back_url }}" class="btn-ghost">Back</a></div>
+
+    {% if selector_mode == 'year' %}
+    <section class="panel selector-panel">
+        <form method="GET" class="inline-filter-form" onsubmit="event.preventDefault(); window.location.href='{{ url_for('year_detail', year=0)[:-1] }}' + document.getElementById('year-selector').value;">
+            <div class="form-group inline-form-group"><label>Choose Year</label><select id="year-selector">{% for year in year_options %}<option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>{% endfor %}</select></div>
+            <div class="form-group button-bottom"><button type="submit" class="btn-submit">Open Year</button></div>
+        </form>
+    </section>
+    {% elif selector_mode == 'month' %}
+    <section class="panel selector-panel">
+        <form method="GET" class="inline-filter-form" onsubmit="event.preventDefault(); const y=document.getElementById('month-year-selector').value; const m=document.getElementById('month-selector').value.padStart(2,'0'); window.location.href='{{ url_for('month_detail', period='2000-01')[:-7] }}' + y + '-' + m;">
+            <div class="form-group inline-form-group"><label>Year</label><select id="month-year-selector">{% for year in year_options %}<option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>{% endfor %}</select></div>
+            <div class="form-group inline-form-group"><label>Month</label><select id="month-selector">{% for month in month_options %}<option value="{{ month.value }}" {% if selected_month == month.value|string %}selected{% endif %}>{{ month.label }}</option>{% endfor %}</select></div>
+            <div class="form-group button-bottom"><button type="submit" class="btn-submit">Open Month</button></div>
+        </form>
+    </section>
+    {% elif selector_mode == 'day' %}
+    <section class="panel selector-panel">
+        <form method="GET" class="inline-filter-form" onsubmit="event.preventDefault(); const d=document.getElementById('day-selector').value; if(d){ window.location.href='{{ url_for('day_detail', day_iso='2000-01-01')[:-10] }}' + d; }">
+            <div class="form-group inline-form-group"><label>Choose Day</label><input id="day-selector" type="date" value="{{ selected_day }}"></div>
+            <div class="form-group button-bottom"><button type="submit" class="btn-submit">Open Day</button></div>
+        </form>
+    </section>
+    {% elif selector_mode == 'category' %}
+    <section class="panel selector-panel">
+        <form method="GET" class="filter-grid filter-grid-compact">
+            <div class="form-group"><label>Year</label><select name="year"><option value="">All years</option>{% for year in year_options %}<option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>{% endfor %}</select></div>
+            <div class="form-group"><label>Month</label><select name="month"><option value="">All months</option>{% for month in month_options %}<option value="{{ month.value }}" {% if selected_month == month.value|string %}selected{% endif %}>{{ month.label }}</option>{% endfor %}</select></div>
+            <div class="form-group button-bottom"><button type="submit" class="btn-submit">Apply</button></div>
+        </form>
+    </section>
+    {% endif %}
+
+    <section class="panel">
+        <div class="panel-head"><h2>Matching Expenses</h2><div class="muted">Total: ₹{{ '{:,.2f}'.format(total) }}</div></div>
+        {% if expenses %}
+        <div class="table-wrap"><table class="expense-table"><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Payment</th><th>Amount</th></tr></thead><tbody>{% for expense in expenses %}<tr><td>{{ expense.date_display }}</td><td>{{ expense.description }}</td><td>{{ expense.category }}</td><td>{{ expense.payment_mode }}</td><td class="amount-cell">₹{{ '{:,.2f}'.format(expense.amount) }}</td></tr>{% endfor %}</tbody></table></div>
+        {% else %}
+        <div class="empty-state">No expenses found.</div>
+        {% endif %}
+    </section>
+</section>
+{% endblock %}

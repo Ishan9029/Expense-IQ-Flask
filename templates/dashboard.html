@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — {{ app_name }}{% endblock %}
+{% block content %}
+<section class="page-shell dashboard-shell">
+    <div class="page-head">
+        <div>
+            <div class="hero-badge">Dashboard</div>
+            <h1 class="dashboard-title">Welcome back, {{ current_user['name'].split(' ')[0] }}</h1>
+            <p class="dashboard-subtitle">A quick look at your spending right now.</p>
+        </div>
+        <div class="action-stack">
+            <a href="{{ url_for('add_expense') }}" class="btn-primary">Add Expense</a>
+            <a href="{{ url_for('prediction_page') }}" class="btn-ghost">Open Prediction</a>
+        </div>
+    </div>
+
+    <div class="stats-grid stats-grid-4">
+        <a class="stat-card clickable-card" href="{{ url_for('total_detail') }}"><div class="stat-label">Total</div><div class="stat-value">₹{{ '{:,.2f}'.format(total) }}</div><div class="stat-sub">{{ date_range or 'No records yet' }}</div></a>
+        <a class="stat-card clickable-card" href="{{ url_for('year_detail', year=current_year_label) }}"><div class="stat-label">Current Year</div><div class="stat-value">₹{{ '{:,.2f}'.format(year_total) }}</div><div class="stat-sub">{{ current_year_label }}</div></a>
+        <a class="stat-card clickable-card" href="{{ url_for('month_detail', period=today_iso_value[:7]) }}"><div class="stat-label">Current Month</div><div class="stat-value">₹{{ '{:,.2f}'.format(month_total) }}</div><div class="stat-sub">{{ current_month_label }}</div></a>
+        <a class="stat-card clickable-card" href="{{ url_for('day_detail', day_iso=today_iso_value) }}"><div class="stat-label">Current Day</div><div class="stat-value">₹{{ '{:,.2f}'.format(day_total) }}</div><div class="stat-sub">{{ current_day_label }}</div></a>
+    </div>
+
+    <div class="prediction-banner {% if predictions.ready and predictions.day.tone == 'up' %}prediction-up{% elif predictions.ready %}prediction-down{% else %}prediction-neutral{% endif %}">
+        {% if predictions.ready %}
+            <div>
+                <div class="prediction-label">Next Day Prediction</div>
+                <h3>{{ predictions.day.direction }} Spend Tomorrow</h3>
+                <p>Based on {{ predictions.latest_day }} with latest total ₹{{ '%.2f'|format(predictions.latest_amount) }}.</p>
+            </div>
+            <a href="{{ url_for('prediction_page') }}" class="btn-ghost">View full prediction</a>
+        {% else %}
+            <div>
+                <div class="prediction-label">Prediction</div>
+                <h3>Not ready yet</h3>
+                <p>{{ predictions.message }}</p>
+            </div>
+        {% endif %}
+    </div>
+
+    {% include 'partials/category_panel.html' %}
+
+    <div class="panel-grid two-col dashboard-bottom-grid">
+        <section class="panel">
+            <div class="panel-head"><h2>Recent Expenses</h2><a href="{{ url_for('expenses_list') }}">See all</a></div>
+            {% if recent_expenses %}
+            <div class="list-stack">
+                {% for expense in recent_expenses %}
+                <div class="list-row">
+                    <div><strong>{{ expense.description }}</strong><div class="muted">{{ expense.date_display }} · {{ expense.category }} · {{ expense.payment_mode }}</div></div>
+                    <div class="amount-pill">₹{{ '{:,.2f}'.format(expense.amount) }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">No expenses yet.</div>
+            {% endif %}
+        </section>
+
+        <section class="panel">
+            <div class="panel-head"><h2>Quick Details</h2><a href="{{ url_for('details_overview') }}">Open details page</a></div>
+            <div class="quick-details-stack">
+                <div class="quick-group">
+                    <div class="quick-group-head">
+                        <h3 class="mini-title">Recent Days</h3>
+                        <span class="section-chip">Daily view</span>
+                    </div>
+                    {% for item in day_rows[:4] %}
+                    <a class="detail-link" href="{{ url_for('day_detail', day_iso=item.key) }}">
+                        <span>{{ item.label }}</span><span>₹{{ '{:,.2f}'.format(item.total) }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                <div class="quick-group quick-group-stacked">
+                    <div class="quick-group-head">
+                        <h3 class="mini-title">Recent Months</h3>
+                        <span class="section-chip">Monthly view</span>
+                    </div>
+                    {% for item in month_rows[:4] %}
+                    <a class="detail-link" href="{{ url_for('month_detail', period=item.key) }}">
+                        <span>{{ item.label }}</span><span>₹{{ '{:,.2f}'.format(item.total) }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+    </div>
+</section>
+{% endblock %}

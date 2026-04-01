@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ app_name }} — Smart Expense Tracking{% endblock %}
+{% block content %}
+<section class="hero">
+    <div class="hero-inner">
+        <div class="hero-badge">Personal Expense Tracker</div>
+        <h1 class="hero-title">Understand your money with <em>{{ app_name }}</em></h1>
+        <p class="hero-subtitle">Track daily expenses, browse month and day details, and see whether your spending may go up or down next.</p>
+        <div class="hero-actions">
+            <a href="{{ url_for('register') }}" class="btn-primary">Create account</a>
+            <a href="{{ url_for('login') }}" class="btn-ghost">Sign in</a>
+        </div>
+    </div>
+    <div class="hero-visual">
+        <div class="mock-card">
+            <div class="mock-card-header">
+                <span class="mock-label">ExpenseIq</span>
+                <span class="mock-total">₹8,420</span>
+            </div>
+            <div class="mock-bars">
+                <div class="mock-bar-row"><span class="mock-cat">Food</span><div class="mock-bar-track"><div class="mock-bar" style="width:68%"></div></div><span class="mock-amt">₹2,900</span></div>
+                <div class="mock-bar-row"><span class="mock-cat">Travel</span><div class="mock-bar-track"><div class="mock-bar mock-bar-2" style="width:44%"></div></div><span class="mock-amt">₹1,950</span></div>
+                <div class="mock-bar-row"><span class="mock-cat">Bills</span><div class="mock-bar-track"><div class="mock-bar mock-bar-3" style="width:39%"></div></div><span class="mock-amt">₹1,700</span></div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

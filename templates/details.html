@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Details — {{ app_name }}{% endblock %}
+{% block content %}
+<section class="page-shell">
+    <div class="page-head"><div><div class="hero-badge">Details</div><h1 class="dashboard-title">Browse by month</h1><p class="dashboard-subtitle">Each month works like a folder. Open a month, then open a day inside it, then view that day's expenses.</p></div></div>
+    <section class="panel">
+        <div class="panel-head"><h2>Months</h2></div>
+        {% if month_rows %}
+            {% for item in month_rows %}
+            <a class="detail-link" href="{{ url_for('month_detail', period=item.key) }}"><span>{{ item.label }} · {{ item.count }} entries</span><span>₹{{ '{:,.2f}'.format(item.total) }}</span></a>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">No months available yet.</div>
+        {% endif %}
+    </section>
+</section>
+{% endblock %}

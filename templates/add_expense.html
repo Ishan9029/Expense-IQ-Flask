@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Add Expense — {{ app_name }}{% endblock %}
+{% block content %}
+<section class="page-shell narrow-shell">
+    <div class="page-head">
+        <div>
+            <div class="hero-badge">Add Expense</div>
+            <h1 class="dashboard-title">Log or import expenses</h1>
+            <p class="dashboard-subtitle">Add a single expense manually or import debit transactions from a bank statement.</p>
+        </div>
+    </div>
+
+    <section class="panel form-panel" style="margin-bottom: 24px;">
+        <div style="margin-bottom: 18px;">
+            <h2 style="margin:0 0 6px 0;">Manual Entry</h2>
+            <p class="dashboard-subtitle" style="margin:0;">Use this when you want to add one expense at a time.</p>
+        </div>
+        <form method="POST" class="expense-form">
+            <input type="hidden" name="action" value="manual">
+            <div class="form-grid">
+                <div class="form-group"><label>Date</label><input type="date" name="expense_date" value="{{ today_iso }}" required></div>
+                <div class="form-group"><label>Amount</label><input type="number" name="amount" step="0.01" min="0.01" required></div>
+            </div>
+            <div class="form-group"><label>Description</label><input type="text" name="description" placeholder="Groceries, recharge, fuel..." required></div>
+            <div class="form-grid">
+                <div class="form-group"><label>Category</label><select name="category">{% for category in categories %}<option value="{{ category }}">{{ category }}</option>{% endfor %}</select></div>
+                <div class="form-group"><label>Payment Mode</label><select name="payment_mode">{% for mode in payment_modes %}<option value="{{ mode }}">{{ mode }}</option>{% endfor %}</select></div>
+            </div>
+            <div class="action-row space-top"><button type="submit" class="btn-submit">Save Expense</button><a class="btn-ghost" href="{{ url_for('dashboard') }}">Cancel</a></div>
+        </form>
+    </section>
+
+    <section class="panel form-panel">
+        <div style="margin-bottom: 18px;">
+            <h2 style="margin:0 0 6px 0;">Import Bank Statement</h2>
+            <p class="dashboard-subtitle" style="margin:0;">Upload CSV, XLSX, XLS, or PDF. The importer tries to detect different bank formats, delimiters, debit/credit columns, and skips duplicate rows already in your account.</p>
+        </div>
+        <form method="POST" enctype="multipart/form-data" class="expense-form">
+            <input type="hidden" name="action" value="import_statement">
+            <div class="form-group">
+                <label>Statement File</label>
+                <input type="file" name="statement_file" accept=".csv,.xlsx,.xls,.pdf" required>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 16px; margin-top: 10px; color: #c7c9d1; font-size: 0.95rem; line-height: 1.6;">
+                <strong style="color: #fff;">What the importer does:</strong><br>
+                • keeps debit expense rows and ignores credits when possible<br>
+                • guesses category and payment mode from narration/description<br>
+                • handles common CSV separators like comma, semicolon, tab, and pipe<br>
+                • tries table extraction for PDFs and falls back gracefully if the file is not readable
+            </div>
+            <div class="action-row space-top"><button type="submit" class="btn-submit">Import Statement</button><a class="btn-ghost" href="{{ url_for('expenses_list') }}">View Expenses</a></div>
+        </form>
+    </section>
+</section>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Prediction — {{ app_name }}{% endblock %}
+{% block content %}
+<section class="page-shell">
+    <div class="page-head"><div><div class="hero-badge">Prediction</div><h1 class="dashboard-title">Spending direction outlook</h1><p class="dashboard-subtitle">Daily outlook uses your existing day model. Monthly outlook uses the provided monthly classifier. Simulated next-month and yearly projections have been removed.</p></div></div>
+    {% if predictions.ready %}
+    <div class="stats-grid {% if predictions.day and predictions.month %}stats-grid-2{% else %}stats-grid-1{% endif %}">
+        {% for block in [predictions.day, predictions.month] if block %}
+        <div class="prediction-card prediction-{{ block.tone }} standalone-card">
+            <div class="prediction-label">{{ block.label }}</div>
+            <h3>{{ block.direction }} Spend</h3>
+            {% if block.target_date %}<p>Target period starts: {{ block.target_date }}</p>{% endif %}
+            {% if block.probability is not none %}<div class="muted">Confidence: {{ '%.1f'|format(block.probability * 100) }}%</div>{% endif %}
+            {% if block.trend %}<div class="muted">Trend: {{ block.trend }}</div>{% endif %}
+            {% if block.trend_change_pct is not none %}<div class="muted">Recent change: {{ '%+.1f'|format(block.trend_change_pct) }}%</div>{% endif %}
+            {% if block.compare_total is not none %}<div class="muted">Latest reference total: ₹{{ '{:,.2f}'.format(block.compare_total) }}</div>{% endif %}
+            {% if block.previous_total is not none %}<div class="muted">Previous period total: ₹{{ '{:,.2f}'.format(block.previous_total) }}</div>{% endif %}
+            {% if block.reference_amount is defined and block.reference_amount is not none %}<div class="muted">Latest day total: ₹{{ '{:,.2f}'.format(block.reference_amount) }}</div>{% endif %}
+            {% if block.recent_average is defined and block.recent_average is not none %}<div class="muted">Recent average: ₹{{ '{:,.2f}'.format(block.recent_average) }}</div>{% endif %}
+            {% if block.transactions is defined %}<div class="muted">Transactions in source month: {{ block.transactions }}</div>{% endif %}
+            {% if block.source_month_label is defined %}<div class="muted">Source month: {{ block.source_month_label }}</div>{% endif %}
+            {% if block.note %}<div class="muted">{{ block.note }}</div>{% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <section class="panel">
+        <div class="panel-head"><h2>How to read this</h2></div>
+        <div class="muted">
+            “Confidence” is the model probability for the predicted direction. “Trend” summarizes recent movement in your real logged data, not simulated values.
+        </div>
+    </section>
+    {% else %}
+    <section class="panel"><div class="empty-state">{{ predictions.message }}</div></section>
+    {% endif %}
+</section>
+{% endblock %}

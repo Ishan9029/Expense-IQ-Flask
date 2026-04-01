@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}All Expenses — {{ app_name }}{% endblock %}
+{% block content %}
+<section class="page-shell">
+    <div class="page-head"><div><div class="hero-badge">All Expenses</div><h1 class="dashboard-title">List view of every expense</h1><p class="dashboard-subtitle">Filter by year, month, or exact day.</p></div><a href="{{ url_for('add_expense') }}" class="btn-primary">Add Expense</a></div>
+
+    <section class="panel">
+        <form method="GET" class="filter-grid">
+            <div class="form-group"><label>Year</label><select name="year"><option value="">All</option>{% for year in year_options %}<option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>{% endfor %}</select></div>
+            <div class="form-group"><label>Month</label><select name="month"><option value="">All</option>{% for month in month_options %}<option value="{{ month.value }}" {% if selected_month == month.value %}selected{% endif %}>{{ month.label }}</option>{% endfor %}</select></div>
+            <div class="form-group"><label>Exact Day</label><input type="date" name="day" value="{{ selected_day }}"></div>
+            <div class="form-group button-bottom"><button type="submit" class="btn-submit">Apply Filters</button></div>
+        </form>
+    </section>
+
+    <section class="panel">
+        <div class="panel-head"><h2>Expenses</h2><div class="muted">Filtered total: ₹{{ '{:,.2f}'.format(total_filtered) }}{% if pagination.total_items %} · Showing {{ pagination.start_index }}–{{ pagination.end_index }} of {{ pagination.total_items }}{% endif %}</div></div>
+        {% if expenses %}
+        <div class="table-wrap">
+            <table class="expense-table">
+                <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Payment</th><th>Amount</th><th>Actions</th></tr></thead>
+                <tbody>
+                {% for expense in expenses %}
+                <tr>
+                    <td>{{ expense.date_display }}</td>
+                    <td>{{ expense.description }}</td>
+                    <td>{{ expense.category }}</td>
+                    <td>{{ expense.payment_mode }}</td>
+                    <td class="amount-cell">₹{{ '{:,.2f}'.format(expense.amount) }}</td>
+                    <td><div class="action-row"><a class="action-link" href="{{ url_for('edit_expense', id=expense.id) }}">Edit</a><form method="POST" action="{{ url_for('delete_expense', id=expense.id) }}" onsubmit="return confirm('Delete this expense?');"><button type="submit" class="action-link danger-link">Delete</button></form></div></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">No expenses found for these filters.</div>
+        {% endif %}
+
+        {% if pagination.total_pages > 1 %}
+        <div class="pagination-bar">
+            <div class="pagination-summary">Page {{ pagination.page }} of {{ pagination.total_pages }}</div>
+            <div class="pagination-links">
+                {% if pagination.has_prev %}
+                <a class="btn-ghost btn-small" href="{{ url_for('expenses_list', year=selected_year or None, month=selected_month or None, day=selected_day or None, page=pagination.prev_page) }}">Previous</a>
+                {% endif %}
+                {% for p in range(1, pagination.total_pages + 1) %}
+                    {% if p == pagination.page %}
+                    <span class="page-pill active">{{ p }}</span>
+                    {% else %}
+                    <a class="page-pill" href="{{ url_for('expenses_list', year=selected_year or None, month=selected_month or None, day=selected_day or None, page=p) }}">{{ p }}</a>
+                    {% endif %}
+                {% endfor %}
+                {% if pagination.has_next %}
+                <a class="btn-ghost btn-small" href="{{ url_for('expenses_list', year=selected_year or None, month=selected_month or None, day=selected_day or None, page=pagination.next_page) }}">Next</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </section>
+</section>
+{% endblock %}

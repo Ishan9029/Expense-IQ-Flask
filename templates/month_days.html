@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} — {{ app_name }}{% endblock %}
+{% block content %}
+<section class="page-shell">
+    <div class="page-head"><div><div class="hero-badge">Details</div><h1 class="dashboard-title">{{ page_title }}</h1><p class="dashboard-subtitle">{{ page_subtitle }}</p></div><a href="{{ back_url }}" class="btn-ghost">Back</a></div>
+
+    <section class="panel">
+        <div class="panel-head">
+            <h2>Days</h2>
+            <div class="muted">{{ entry_count }} entries · ₹{{ '{:,.2f}'.format(total) }}</div>
+        </div>
+        {% if days %}
+            {% for item in days %}
+            <a class="detail-link" href="{{ url_for('day_detail', day_iso=item.key) }}"><span>{{ item.label }} · {{ item.count }} entries</span><span>₹{{ '{:,.2f}'.format(item.total) }}</span></a>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">No days available in this month.</div>
+        {% endif %}
+    </section>
+</section>
+{% endblock %}

@@ -1,0 +1,67 @@
+<section class="panel category-panel" id="category-panel">
+    <div class="panel-head">
+        <h2>Category</h2>
+        <div class="muted">Filter category totals by year and month.</div>
+    </div>
+    <form
+        method="GET"
+        action="{{ url_for('dashboard') }}"
+        class="filter-grid filter-grid-compact category-filter-row"
+        hx-get="{{ url_for('dashboard_category_panel') }}"
+        hx-target="#category-panel"
+        hx-swap="outerHTML"
+    >
+        <div class="form-group">
+            <label>Year</label>
+            <select name="cat_year">
+                <option value="">All years</option>
+                {% for year in year_options %}
+                <option value="{{ year }}" {% if selected_category_year == year %}selected{% endif %}>{{ year }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Month</label>
+            <select name="cat_month">
+                <option value="">All months</option>
+                {% for month in month_options %}
+                <option value="{{ month.value }}" {% if selected_category_month == month.value|string %}selected{% endif %}>{{ month.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group button-bottom">
+            <button type="submit" class="btn-submit">Apply</button>
+        </div>
+        <div class="form-group button-bottom">
+            <a
+                href="{{ url_for('dashboard') }}"
+                class="btn-ghost btn-inline"
+                hx-get="{{ url_for('dashboard_category_panel', cat_year=default_category_year, cat_month=default_category_month) }}"
+                hx-target="#category-panel"
+                hx-swap="outerHTML"
+            >
+                Reset
+            </a>
+        </div>
+    </form>
+
+    <div class="stats-grid stats-grid-3 scope-summary-grid">
+        <div class="stat-card"><div class="stat-label">Selected Scope</div><div class="stat-value">₹{{ '{:,.2f}'.format(category_total_amount) }}</div><div class="stat-sub">{{ category_scope_label }}</div></div>
+        <div class="stat-card"><div class="stat-label">Selected Year Total</div><div class="stat-value">₹{{ '{:,.2f}'.format(category_year_total or 0) }}</div><div class="stat-sub">{% if selected_category_year %}{{ selected_category_year }}{% else %}Pick a year to view{% endif %}</div></div>
+        <div class="stat-card"><div class="stat-label">Overall Total</div><div class="stat-value">₹{{ '{:,.2f}'.format(overall_total) }}</div><div class="stat-sub">All records</div></div>
+    </div>
+
+    {% if category_cards %}
+    <div class="category-grid">
+        {% for item in category_cards %}
+        <a class="category-card clickable-card" href="{{ item.detail_url }}" style="border-top-color: {{ item.color }};">
+            <div class="category-name">{{ item.category }}</div>
+            <div class="category-amount">₹{{ '{:,.0f}'.format(item.amount) }}</div>
+            <div class="category-share">{{ '%.1f'|format(item.share) }}% of selected total</div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">No category data found for the selected filters.</div>
+    {% endif %}
+</section>
