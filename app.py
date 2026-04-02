@@ -78,7 +78,9 @@ def load_logged_in_user():
     user_id = session.get('user_id')
     if user_id:
         with get_db() as conn:
-            g.user = conn.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
+            with conn.cursor() as cur:
+                cur.execute('SELECT * FROM users WHERE id = %s', (user_id,))
+                g.user = cur.fetchone()
 
 
 @app.context_processor
@@ -115,17 +117,20 @@ def register():
 
         if error is None:
             with get_db() as conn:
-                existing = conn.execute('SELECT id FROM users WHERE email = ?', (email,)).fetchone()
-                if existing:
-                    error = 'An account with this email already exists.'
-                else:
-                    conn.execute(
-                        'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)',
-                        (name, email, generate_password_hash(password))
-                    )
-                    conn.commit()
-                    flash('Account created. You can sign in now.', 'success')
-                    return redirect(url_for('login'))
+                with conn.cursor() as cur:
+                    cur.execute('SELECT id FROM users WHERE email = %s', (email,))
+                    existing = cur.fetchone()
+
+                    if existing:
+                        error = 'An account with this email already exists.'
+                    else:
+                        cur.execute(
+                            'INSERT INTO users (name, email, password_hash) VALUES (%s, %s, %s)',
+                            (name, email, generate_password_hash(password))
+                        )
+                        conn.commit()
+                        flash('Account created. You can sign in now.', 'success')
+                        return redirect(url_for('login'))
 
         return render_template('register.html', error=error)
 
@@ -139,7 +144,9 @@ def login():
         password = request.form.get('password', '')
 
         with get_db() as conn:
-            user = conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
+            with conn.cursor() as cur:
+                cur.execute('SELECT * FROM users WHERE email = %s', (email,))
+                user = cur.fetchone()
 
         if user is None or not check_password_hash(user['password_hash'], password):
             return render_template('login.html', error='Invalid email or password.')
@@ -168,15 +175,17 @@ def login_required():
 
 def fetch_expenses(user_id):
     with get_db() as conn:
-        return conn.execute(
-            '''
-            SELECT id, expense_date, description, category, payment_mode, amount
-            FROM expenses
-            WHERE user_id = ?
-            ORDER BY expense_date DESC, id DESC
-            ''',
-            (user_id,)
-        ).fetchall()
+        with conn.cursor() as cur:
+            cur.execute(
+                '''
+                SELECT id, expense_date, description, category, payment_mode, amount
+                FROM expenses
+                WHERE user_id = %s
+                ORDER BY expense_date DESC, id DESC
+                ''',
+                (user_id,)
+            )
+            return cur.fetchall()
 
 
 def normalize_expenses(rows):
@@ -235,6 +244,7 @@ def build_daily_totals(expenses):
     for item in expenses:
         daily_totals[item['date']] += item['amount']
     return daily_totals
+
 
 MONTH_NAMES = {
     1: 'January', 2: 'February', 3: 'March', 4: 'April', 5: 'May', 6: 'June',
@@ -967,30 +977,33 @@ def add_expense():
                 return redirect(url_for('add_expense'))
 
             with get_db() as conn:
-                existing = {
-                    (row['expense_date'], row['description'], round(float(row['amount']), 2))
-                    for row in conn.execute(
-                        'SELECT expense_date, description, amount FROM expenses WHERE user_id = ?',
+                with conn.cursor() as cur:
+                    cur.execute(
+                        'SELECT expense_date, description, amount FROM expenses WHERE user_id = %s',
                         (g.user['id'],)
-                    ).fetchall()
-                }
-
-                inserted = 0
-                skipped = 0
-                for row in parsed_rows:
-                    key = (row['expense_date'], row['description'], round(float(row['amount']), 2))
-                    if key in existing:
-                        skipped += 1
-                        continue
-                    conn.execute(
-                        '''
-                        INSERT INTO expenses (user_id, expense_date, description, category, payment_mode, amount)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                        ''',
-                        (g.user['id'], row['expense_date'], row['description'], row['category'], row['payment_mode'], row['amount'])
                     )
-                    existing.add(key)
-                    inserted += 1
+                    existing = {
+                        (row['expense_date'], row['description'], round(float(row['amount']), 2))
+                        for row in cur.fetchall()
+                    }
+
+                    inserted = 0
+                    skipped = 0
+                    for row in parsed_rows:
+                        key = (row['expense_date'], row['description'], round(float(row['amount']), 2))
+                        if key in existing:
+                            skipped += 1
+                            continue
+                        cur.execute(
+                            '''
+                            INSERT INTO expenses (user_id, expense_date, description, category, payment_mode, amount)
+                            VALUES (%s, %s, %s, %s, %s, %s)
+                            ''',
+                            (g.user['id'], row['expense_date'], row['description'], row['category'], row['payment_mode'], row['amount'])
+                        )
+                        existing.add(key)
+                        inserted += 1
+
                 conn.commit()
 
             if inserted:
@@ -1021,13 +1034,14 @@ def add_expense():
             return redirect(url_for('add_expense'))
 
         with get_db() as conn:
-            conn.execute(
-                '''
-                INSERT INTO expenses (user_id, expense_date, description, category, payment_mode, amount)
-                VALUES (?, ?, ?, ?, ?, ?)
-                ''',
-                (g.user['id'], expense_date, description, category, payment_mode, amount)
-            )
+            with conn.cursor() as cur:
+                cur.execute(
+                    '''
+                    INSERT INTO expenses (user_id, expense_date, description, category, payment_mode, amount)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    ''',
+                    (g.user['id'], expense_date, description, category, payment_mode, amount)
+                )
             conn.commit()
 
         flash('Expense added successfully.', 'success')
@@ -1203,10 +1217,12 @@ def edit_expense(id):
         return guard
 
     with get_db() as conn:
-        expense = conn.execute(
-            'SELECT * FROM expenses WHERE id = ? AND user_id = ?',
-            (id, g.user['id'])
-        ).fetchone()
+        with conn.cursor() as cur:
+            cur.execute(
+                'SELECT * FROM expenses WHERE id = %s AND user_id = %s',
+                (id, g.user['id'])
+            )
+            expense = cur.fetchone()
 
         if expense is None:
             flash('Expense not found.', 'error')
@@ -1234,14 +1250,15 @@ def edit_expense(id):
                 flash('Amount must be greater than 0.', 'error')
                 return redirect(url_for('edit_expense', id=id))
 
-            conn.execute(
-                '''
-                UPDATE expenses
-                SET expense_date = ?, description = ?, category = ?, payment_mode = ?, amount = ?
-                WHERE id = ? AND user_id = ?
-                ''',
-                (expense_date, description, category, payment_mode, amount, id, g.user['id'])
-            )
+            with conn.cursor() as cur:
+                cur.execute(
+                    '''
+                    UPDATE expenses
+                    SET expense_date = %s, description = %s, category = %s, payment_mode = %s, amount = %s
+                    WHERE id = %s AND user_id = %s
+                    ''',
+                    (expense_date, description, category, payment_mode, amount, id, g.user['id'])
+                )
             conn.commit()
             flash('Expense updated.', 'success')
             return redirect(url_for('expenses_list'))
@@ -1256,7 +1273,8 @@ def delete_expense(id):
         return guard
 
     with get_db() as conn:
-        conn.execute('DELETE FROM expenses WHERE id = ? AND user_id = ?', (id, g.user['id']))
+        with conn.cursor() as cur:
+            cur.execute('DELETE FROM expenses WHERE id = %s AND user_id = %s', (id, g.user['id']))
         conn.commit()
 
     flash('Expense deleted.', 'success')
